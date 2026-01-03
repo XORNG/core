@@ -231,6 +231,19 @@ export class XORNGCore {
       ? `Context:\n${memoryContext.join('\n')}\n\n${request.prompt}`
       : request.prompt;
 
+    // Build full context string including file/code context
+    const contextParts: string[] = [];
+    if (request.context?.currentFile) {
+      contextParts.push(`Current file: ${request.context.currentFile}`);
+    }
+    if (request.context?.selectedCode) {
+      contextParts.push(`Selected code:\n\`\`\`\n${request.context.selectedCode}\n\`\`\``);
+    }
+    if (request.context?.projectPath) {
+      contextParts.push(`Project: ${request.context.projectPath}`);
+    }
+    const fileContext = contextParts.length > 0 ? contextParts.join('\n\n') + '\n\n' : '';
+
     // Execute on agents (can be parallel based on options)
     const executeOnAgent = async (agentId: string): Promise<SubAgentResult | null> => {
       const connection = this.agentManager.getConnection(agentId);
@@ -245,6 +258,8 @@ export class XORNGCore {
         let content: string;
 
         // Check if this is a virtual agent
+        this.logger.debug({ agentId, isVirtual: connection.isVirtual, hasLlmClient: !!llmClient }, 'Executing on agent');
+        
         if (connection.isVirtual) {
           // Virtual agents use the LLM client proxy
           if (!llmClient) {
@@ -257,10 +272,15 @@ export class XORNGCore {
             `You are a ${connection.agent.type} agent specializing in ${connection.agent.description}. ` +
             `Your capabilities include: ${connection.agent.capabilities.join(', ')}.`;
 
+          this.logger.debug({ agentId, systemPromptLength: systemPrompt.length }, 'Calling LLM for virtual agent');
+
+          // Build the user message with context
+          const userMessage = fileContext + enhancedPrompt;
+
           // Call LLM via the client proxy
           content = await llmClient.sendRequest([
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: enhancedPrompt },
+            { role: 'user', content: userMessage },
           ], {
             model: request.options?.model,
           });
@@ -288,7 +308,9 @@ export class XORNGCore {
           toolsUsed: connection.isVirtual ? ['llm-proxy'] : ['process'],
         };
       } catch (error) {
-        this.logger.error({ agentId, error }, 'Agent execution failed');
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        this.logger.error({ agentId, errorMessage, errorStack }, 'Agent execution failed');
         return null;
       }
     };
