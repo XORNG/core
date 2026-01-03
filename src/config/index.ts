@@ -18,6 +18,7 @@ const ConfigSchema = z.object({
   }),
   tokenTracking: z.object({
     enabled: z.boolean().default(true),
+    dailyLimit: z.number().int().positive().default(100000),
   }),
   subAgents: z.object({
     timeoutMs: z.number().int().positive().default(30000),
@@ -48,6 +49,7 @@ export function loadConfig(): XORNGConfig {
     },
     tokenTracking: {
       enabled: process.env['ENABLE_TOKEN_TRACKING'] !== 'false',
+      dailyLimit: parseInt(process.env['DAILY_TOKEN_LIMIT'] || '100000', 10),
     },
     subAgents: {
       timeoutMs: parseInt(process.env['SUBAGENT_TIMEOUT_MS'] || '30000', 10),

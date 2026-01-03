@@ -5,7 +5,7 @@
  * It acts as an MCP host that manages connections to multiple sub-agent MCP servers.
  */
 
-export { XORNGCore } from './core/XORNGCore.js';
+export { XORNGCore, type LLMClient } from './core/XORNGCore.js';
 export { Distributor } from './core/Distributor.js';
 export { Aggregator } from './core/Aggregator.js';
 

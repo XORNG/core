@@ -13,6 +13,23 @@ import { TokenTracker } from '../telemetry/TokenTracker.js';
 import { createLogger, type Logger } from '../utils/logger.js';
 
 /**
+ * LLM Client interface for making language model requests
+ * In IPC mode, this is provided by the extension via proxy
+ */
+export interface LLMClient {
+  sendRequest(
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    options?: { model?: string; maxTokens?: number }
+  ): Promise<string>;
+  
+  sendStreamingRequest?(
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    onChunk: (content: string) => void,
+    options?: { model?: string; maxTokens?: number }
+  ): Promise<string>;
+}
+
+/**
  * XORNGCore - Central Orchestration Engine
  * 
  * The main entry point for the XORNG system that coordinates:
@@ -86,9 +103,13 @@ export class XORNGCore {
 
   /**
    * Process a request through the XORNG system
+   * @param request The request to process
+   * @param _llmClient Optional LLM client for making language model requests (required in IPC mode)
+   * @param options Processing options
    */
   async process(
     request: XORNGRequest,
+    _llmClient?: LLMClient,
     options?: {
       aggregationStrategy?: AggregationStrategy;
       includeMemory?: boolean;
@@ -291,11 +312,41 @@ export class XORNGCore {
    * Get token usage statistics
    */
   getTokenUsage(): {
-    totalPromptTokens: number;
-    totalCompletionTokens: number;
+    promptTokens: number;
+    completionTokens: number;
     estimatedCost: number;
+    dailyLimit?: number;
   } {
-    return this.tokenTracker.getStats();
+    const stats = this.tokenTracker.getStats();
+    return {
+      promptTokens: stats.totalPromptTokens,
+      completionTokens: stats.totalCompletionTokens,
+      estimatedCost: stats.estimatedCost,
+      dailyLimit: this.config.tokenTracking?.dailyLimit || 0,
+    };
+  }
+
+  /**
+   * Search memory for relevant content
+   */
+  async searchMemory(query: string, limit = 10): Promise<Array<{
+    id: string;
+    content: string;
+    relevance?: number;
+    timestamp: Date;
+  }>> {
+    return this.memoryManager.search(query, limit);
+  }
+
+  /**
+   * Clear memory by type
+   */
+  async clearMemory(type?: 'short-term' | 'long-term' | 'all'): Promise<void> {
+    // For now, only support clearing short-term memory
+    if (type === 'short-term' || type === 'all' || !type) {
+      await this.memoryManager.clearShortTerm();
+    }
+    // Long-term memory clearing would need to be implemented in MemoryManager
   }
 
   /**

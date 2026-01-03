@@ -127,7 +127,7 @@ export class SubAgentConnection {
       this.logger.debug({ name, result }, 'Tool call completed');
       return {
         content: result.content,
-        isError: result.isError,
+        isError: Boolean(result.isError),
       };
     } catch (error) {
       this._status = 'error';
