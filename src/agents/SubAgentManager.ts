@@ -10,7 +10,7 @@ export interface SubAgentConfig {
   name: string;
   type: SubAgentType;
   description: string;
-  connectionType: 'stdio' | 'http';
+  connectionType: 'stdio' | 'http' | 'virtual';
   // For stdio connections
   command?: string;
   args?: string[];
@@ -62,7 +62,12 @@ export class SubAgentManager {
 
     // Connect based on connection type
     try {
-      if (config.connectionType === 'stdio' && config.command) {
+      if (config.connectionType === 'virtual') {
+        // Virtual agents don't need external connections
+        // They're processed by the orchestrator using the LLM client
+        agent.status = 'idle';
+        this.logger.info({ agentId: config.id }, 'Virtual sub-agent registered');
+      } else if (config.connectionType === 'stdio' && config.command) {
         await connection.connectStdio(config.command, config.args || []);
       } else if (config.connectionType === 'http' && config.endpoint) {
         await connection.connectHttp(config.endpoint);

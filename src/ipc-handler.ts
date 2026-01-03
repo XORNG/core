@@ -171,6 +171,14 @@ class IPCHandler {
           await this.handleAgentsList(request);
           break;
 
+        case 'agents:register':
+          await this.handleAgentRegister(request);
+          break;
+
+        case 'agents:unregister':
+          await this.handleAgentUnregister(request);
+          break;
+
         case 'process:request':
           await this.handleProcessRequest(request);
           break;
@@ -231,6 +239,81 @@ class IPCHandler {
         version: a.metadata?.version || '1.0.0',
       })),
     });
+  }
+
+  /**
+   * Handle agent registration request
+   */
+  private async handleAgentRegister(request: IPCRequest): Promise<void> {
+    const payload = request.payload as {
+      id: string;
+      name: string;
+      type: 'validator' | 'knowledge' | 'task' | 'dynamic';
+      description: string;
+      capabilities: string[];
+      connectionType?: 'stdio' | 'http' | 'virtual';
+      command?: string;
+      args?: string[];
+      endpoint?: string;
+    };
+
+    try {
+      // Validate required fields
+      if (!payload.id || !payload.name || !payload.type) {
+        this.sendError(request.id, 'INVALID_PAYLOAD', 'Missing required fields: id, name, type');
+        return;
+      }
+
+      // Register the agent with Core
+      await this.core.registerSubAgent({
+        id: payload.id,
+        name: payload.name,
+        type: payload.type,
+        description: payload.description || '',
+        capabilities: payload.capabilities || [],
+        connectionType: payload.connectionType || 'virtual',
+        command: payload.command,
+        args: payload.args,
+        endpoint: payload.endpoint,
+      });
+
+      this.logger.info({ agentId: payload.id }, 'Sub-agent registered via IPC');
+
+      this.sendResponse(request.id, 'agents:register:response', true, {
+        agentId: payload.id,
+        status: 'registered',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error({ error: errorMessage }, 'Failed to register agent');
+      this.sendError(request.id, 'REGISTRATION_FAILED', errorMessage);
+    }
+  }
+
+  /**
+   * Handle agent unregistration request
+   */
+  private async handleAgentUnregister(request: IPCRequest): Promise<void> {
+    const payload = request.payload as { id: string };
+
+    try {
+      if (!payload.id) {
+        this.sendError(request.id, 'INVALID_PAYLOAD', 'Missing required field: id');
+        return;
+      }
+
+      await this.core.unregisterSubAgent(payload.id);
+      this.logger.info({ agentId: payload.id }, 'Sub-agent unregistered via IPC');
+
+      this.sendResponse(request.id, 'agents:unregister:response', true, {
+        agentId: payload.id,
+        status: 'unregistered',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error({ error: errorMessage }, 'Failed to unregister agent');
+      this.sendError(request.id, 'UNREGISTRATION_FAILED', errorMessage);
+    }
   }
 
   /**

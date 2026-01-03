@@ -102,6 +102,17 @@ export class XORNGCore {
   }
 
   /**
+   * Unregister a sub-agent from the system
+   */
+  async unregisterSubAgent(agentId: string): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('XORNG Core is not initialized');
+    }
+
+    await this.agentManager.unregisterAgent(agentId);
+  }
+
+  /**
    * Process a request through the XORNG system
    * @param request The request to process
    * @param _llmClient Optional LLM client for making language model requests (required in IPC mode)
