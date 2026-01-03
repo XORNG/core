@@ -267,7 +267,7 @@ class IPCHandler {
       options: {
         preferredAgents: payload.options?.preferredAgents,
         excludeAgents: payload.options?.excludeAgents,
-        model: payload.context?.metadata?.model, // Propagate model metadata
+        model: (payload.context?.metadata as Record<string, any> | undefined)?.model, // Propagate model metadata
       },
     };
 
