@@ -428,7 +428,10 @@ class IPCHandler {
 
 async function main(): Promise<void> {
   const logLevel = process.env.LOG_LEVEL || 'info';
-  const logger = createLogger(logLevel, 'ipc-main');
+  // Validate log level to ensure it's a valid pino level
+  const validLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
+  const sanitizedLevel = validLevels.includes(logLevel.toLowerCase()) ? logLevel.toLowerCase() : 'info';
+  const logger = createLogger(sanitizedLevel, 'ipc-main');
   
   logger.info('XORNG Core starting in IPC mode...');
 
