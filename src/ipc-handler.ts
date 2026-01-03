@@ -143,7 +143,7 @@ class IPCLLMClient {
 class IPCHandler {
   private core: XORNGCore;
   private llmClient: IPCLLMClient;
-  private logger = createLogger('ipc-handler');
+  private logger = createLogger('info', 'ipc-handler');
 
   constructor(core: XORNGCore, llmClient: IPCLLMClient) {
     this.core = core;
@@ -427,7 +427,8 @@ class IPCHandler {
 // ============================================================================
 
 async function main(): Promise<void> {
-  const logger = createLogger('ipc-main');
+  const logLevel = process.env.LOG_LEVEL || 'info';
+  const logger = createLogger(logLevel, 'ipc-main');
   
   logger.info('XORNG Core starting in IPC mode...');
 
