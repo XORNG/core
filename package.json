@@ -6,8 +6,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npx tsc",
-    "dev": "npx tsc --watch",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "start": "node dist/ipc-handler.js",
     "start:standalone": "node dist/index.js",
     "lint": "eslint src/",
