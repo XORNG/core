@@ -18,6 +18,8 @@ export interface SubAgentConfig {
   endpoint?: string;
   // Capabilities this agent provides
   capabilities: string[];
+  // Additional metadata (e.g., system prompts for virtual agents)
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -54,7 +56,7 @@ export class SubAgentManager {
       status: 'disconnected',
       endpoint: config.endpoint || config.command || '',
       capabilities: config.capabilities,
-      metadata: {},
+      metadata: config.metadata || {},
     };
 
     const connection = new SubAgentConnection(agent);
@@ -65,7 +67,7 @@ export class SubAgentManager {
       if (config.connectionType === 'virtual') {
         // Virtual agents don't need external connections
         // They're processed by the orchestrator using the LLM client
-        agent.status = 'idle';
+        connection.setVirtual();
         this.logger.info({ agentId: config.id }, 'Virtual sub-agent registered');
       } else if (config.connectionType === 'stdio' && config.command) {
         await connection.connectStdio(config.command, config.args || []);

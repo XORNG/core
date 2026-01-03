@@ -255,6 +255,7 @@ class IPCHandler {
       command?: string;
       args?: string[];
       endpoint?: string;
+      metadata?: Record<string, unknown>;
     };
 
     try {
@@ -275,6 +276,7 @@ class IPCHandler {
         command: payload.command,
         args: payload.args,
         endpoint: payload.endpoint,
+        metadata: payload.metadata,
       });
 
       this.logger.info({ agentId: payload.id }, 'Sub-agent registered via IPC');

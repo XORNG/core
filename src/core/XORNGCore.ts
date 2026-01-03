@@ -115,12 +115,12 @@ export class XORNGCore {
   /**
    * Process a request through the XORNG system
    * @param request The request to process
-   * @param _llmClient Optional LLM client for making language model requests (required in IPC mode)
+   * @param llmClient Optional LLM client for making language model requests (required for virtual agents)
    * @param options Processing options
    */
   async process(
     request: XORNGRequest,
-    _llmClient?: LLMClient,
+    llmClient?: LLMClient,
     options?: {
       aggregationStrategy?: AggregationStrategy;
       includeMemory?: boolean;
@@ -155,7 +155,8 @@ export class XORNGCore {
       const results = await this.executeOnAgents(
         request,
         routingDecision,
-        memoryContext
+        memoryContext,
+        llmClient
       );
 
       // Step 4: Aggregate results
@@ -214,7 +215,8 @@ export class XORNGCore {
   private async executeOnAgents(
     request: XORNGRequest,
     routing: RoutingDecision,
-    memoryContext: string[]
+    memoryContext: string[],
+    llmClient?: LLMClient
   ): Promise<SubAgentResult[]> {
     const results: SubAgentResult[] = [];
     const allAgentIds = [...routing.primaryAgents, ...routing.secondaryAgents];
@@ -240,11 +242,38 @@ export class XORNGCore {
       const agentStartTime = Date.now();
 
       try {
-        // Call the agent's main processing tool
-        const result = await connection.callTool('process', {
-          prompt: enhancedPrompt,
-          context: request.context,
-        });
+        let content: string;
+
+        // Check if this is a virtual agent
+        if (connection.isVirtual) {
+          // Virtual agents use the LLM client proxy
+          if (!llmClient) {
+            this.logger.error({ agentId }, 'LLM client required for virtual agent');
+            return null;
+          }
+
+          // Get the agent's system prompt from metadata (if available)
+          const systemPrompt = (connection.agent.metadata?.systemPrompt as string) ||
+            `You are a ${connection.agent.type} agent specializing in ${connection.agent.description}. ` +
+            `Your capabilities include: ${connection.agent.capabilities.join(', ')}.`;
+
+          // Call LLM via the client proxy
+          content = await llmClient.sendRequest([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: enhancedPrompt },
+          ], {
+            model: request.options?.model,
+          });
+        } else {
+          // MCP-connected agents use tool calls
+          const result = await connection.callTool('process', {
+            prompt: enhancedPrompt,
+            context: request.context,
+          });
+          content = typeof result.content === 'string' 
+            ? result.content 
+            : JSON.stringify(result.content);
+        }
 
         const executionTime = Date.now() - agentStartTime;
 
@@ -252,13 +281,11 @@ export class XORNGCore {
           agentId,
           agentName: connection.agent.name,
           agentType: connection.agent.type,
-          content: typeof result.content === 'string' 
-            ? result.content 
-            : JSON.stringify(result.content),
+          content,
           confidence: 0.8, // TODO: Get from actual result
           tokensUsed: 0, // TODO: Track actual tokens
           executionTimeMs: executionTime,
-          toolsUsed: ['process'],
+          toolsUsed: connection.isVirtual ? ['llm-proxy'] : ['process'],
         };
       } catch (error) {
         this.logger.error({ agentId, error }, 'Agent execution failed');

@@ -31,6 +31,26 @@ export class SubAgentConnection {
   }
 
   /**
+   * Check if this is a virtual agent (no external process)
+   */
+  get isVirtual(): boolean {
+    return this._isVirtual;
+  }
+
+  private _isVirtual = false;
+
+  /**
+   * Mark this connection as a virtual agent (no external MCP server)
+   * Virtual agents are processed using the LLM client proxy
+   */
+  setVirtual(): void {
+    this._isVirtual = true;
+    this._status = 'idle';
+    this.agent.status = 'idle';
+    this.logger.info('Marked as virtual agent');
+  }
+
+  /**
    * Connect to the sub-agent via stdio (for local Docker containers)
    */
   async connectStdio(command: string, args: string[] = []): Promise<void> {
