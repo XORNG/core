@@ -1,0 +1,48 @@
+{
+  "name": "@xorng/core",
+  "version": "0.1.0",
+  "description": "XORNG Core - Central orchestration engine for AI-assisted development",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "test": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ai",
+    "mcp",
+    "orchestration",
+    "agents",
+    "llm"
+  ],
+  "author": "XORNG",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0",
+    "redis": "^4.7.0",
+    "tiktoken": "^1.0.18",
+    "pino": "^9.6.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "eslint": "^9.16.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XORNG/core.git"
+  }
+}
