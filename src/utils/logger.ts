@@ -1,17 +1,19 @@
 import pino from 'pino';
+import { createRequire } from 'module';
 
 export type Logger = pino.Logger;
 
+// Create require for ESM context
+const require = createRequire(import.meta.url);
+
 /**
- * Check if pino-pretty is available
+ * Get the absolute path to pino-pretty if available
  */
-function isPinoPrettyAvailable(): boolean {
+function getPinoPrettyPath(): string | null {
   try {
-    // Dynamic import check - we just need to verify the module exists
-    require.resolve('pino-pretty');
-    return true;
+    return require.resolve('pino-pretty');
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -25,13 +27,13 @@ export function createLogger(level: string = 'info', name?: string): Logger {
   };
 
   // Only use pino-pretty transport if available and not in production
-  const usePretty = process.env.NODE_ENV !== 'production' && isPinoPrettyAvailable();
+  const pinoPrettyPath = process.env.NODE_ENV !== 'production' ? getPinoPrettyPath() : null;
 
-  if (usePretty) {
+  if (pinoPrettyPath) {
     return pino({
       ...baseOptions,
       transport: {
-        target: 'pino-pretty',
+        target: pinoPrettyPath,
         options: {
           colorize: true,
           translateTime: 'SYS:standard',
