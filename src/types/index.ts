@@ -56,6 +56,7 @@ export interface RequestOptions {
   preferredAgents?: string[];
   excludeAgents?: string[];
   parallel?: boolean;
+  model?: string | any; // Model preference
 }
 
 /**

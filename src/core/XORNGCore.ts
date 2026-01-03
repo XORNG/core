@@ -125,7 +125,9 @@ export class XORNGCore {
     try {
       // Track input tokens
       if (this.config.tokenTracking.enabled) {
-        this.tokenTracker.trackPrompt(request.id, request.prompt);
+        // Use model from options if available, otherwise default
+        const model = typeof request.options?.model === 'string' ? request.options.model : 'gpt-4';
+        this.tokenTracker.trackPrompt(request.id, request.prompt, model);
       }
 
       // Step 1: Route the request

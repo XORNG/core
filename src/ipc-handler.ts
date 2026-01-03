@@ -54,7 +54,7 @@ class IPCLLMClient {
    */
   async sendRequest(
     messages: LLMMessage[],
-    options?: { model?: string; maxTokens?: number }
+    options?: { model?: string | any; maxTokens?: number }
   ): Promise<string> {
     const id = `llm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     
@@ -85,7 +85,7 @@ class IPCLLMClient {
   async sendStreamingRequest(
     messages: LLMMessage[],
     onChunk: (content: string) => void,
-    options?: { model?: string; maxTokens?: number }
+    options?: { model?: string | any; maxTokens?: number }
   ): Promise<string> {
     const id = `llm_stream_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     
@@ -267,6 +267,7 @@ class IPCHandler {
       options: {
         preferredAgents: payload.options?.preferredAgents,
         excludeAgents: payload.options?.excludeAgents,
+        model: payload.context?.metadata?.model, // Propagate model metadata
       },
     };
 
