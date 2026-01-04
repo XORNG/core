@@ -23,6 +23,15 @@ export { SubAgentConnection } from './agents/SubAgentConnection.js';
 export { TokenTracker } from './telemetry/TokenTracker.js';
 export { MetricsCollector } from './telemetry/MetricsCollector.js';
 
+// Learning System
+export { LearningService } from './learning/LearningService.js';
+export type {
+  FixPattern,
+  FixAttemptRecord,
+  SelfImprovementMetrics,
+  LearningServiceConfig,
+} from './learning/LearningService.js';
+
 // Types
 export * from './types/index.js';
 
